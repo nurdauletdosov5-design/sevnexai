@@ -1,31 +1,16 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
-let ai: GoogleGenAI | null = null;
+// Coding Guidelines:
+// - Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// - The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 let chatSession: Chat | null = null;
-let currentApiKey: string | null = null;
-
-export const setApiKey = (key: string) => {
-  currentApiKey = key;
-  ai = new GoogleGenAI({ apiKey: key });
-  chatSession = null; // Reset session on key change
-};
-
-const getAIClient = () => {
-  if (!ai) {
-    if (process.env.API_KEY) {
-      setApiKey(process.env.API_KEY);
-    }
-  }
-  if (!ai) throw new Error("API Key topilmadi. Iltimos, qayta tizimga kiring.");
-  return ai;
-};
 
 const getChatSession = () => {
-  const client = getAIClient();
-  
   if (!chatSession) {
-    chatSession = client.chats.create({
+    chatSession = ai.chats.create({
       model: "gemini-2.5-flash",
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -48,9 +33,8 @@ export const streamMessage = async (
     // Agar rasm bo'lsa, chat sessiyasini emas, to'g'ridan-to'g'ri modelni ishlatamiz
     // Sababi: chat.sendMessageStream hozirda multimodal inputni to'g'ridan-to'g'ri qo'llab-quvvatlamasligi mumkin
     if (imageAttachment) {
-      const client = getAIClient();
       
-      const responseStream = await client.models.generateContentStream({
+      const responseStream = await ai.models.generateContentStream({
         model: 'gemini-2.5-flash',
         contents: {
           parts: [
@@ -102,9 +86,7 @@ export const streamMessage = async (
 // Image Generation
 export const generateImage = async (prompt: string): Promise<string> => {
   try {
-    const client = getAIClient();
-    
-    const response = await client.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
